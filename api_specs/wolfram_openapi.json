@@ -1,0 +1,74 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Wolfram Alpha API",
+    "description": "The Wolfram Alpha API returns a single plain text result directly from Wolfram|Alpha. In general, this text is taken directly from the Result pod of Wolfram|Alpha output. This API type is designed to deliver brief answers in the most basic format possible. It is implemented in a standard REST protocol using HTTP GET requests.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.wolframalpha.com/v1"
+    }
+  ],
+  "paths": {
+    "/result": {
+      "get": {
+        "summary": "Get a result from Wolfram|Alpha",
+        "description": "Retrieves a single plain text result from Wolfram|Alpha based on the input query.",
+        "operationId": "get-result",
+        "parameters": [
+          {
+            "name": "i",
+            "in": "query",
+            "description": "Use the i parameter to specify the URL-encoded input for your query. For instance, here is a query for \"How far is Los Angeles from New York?\"",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "units",
+            "in": "query",
+            "description": "Use the units parameter to manually select what system of units to use for measurements and quantities (either \"metric\" or \"imperial\"). By default, the system will use your location to determine this setting.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "This status is returned if a given input value cannot be interpreted by this API. This is commonly caused by input that is misspelled, poorly formatted or otherwise unintelligible. Because this API is designed to return a single result, this message may appear if no sufficiently short result can be found. You may occasionally receive this status when requesting information on topics that are restricted or not covered.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "This status indicates that the API did not find an input parameter while parsing. In most cases, this can be fixed by checking that you have used the correct syntax for including the i parameter.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
