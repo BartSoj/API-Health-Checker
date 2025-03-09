@@ -52,3 +52,18 @@ enum class ValidationErrorType {
     MISSING_REQUIRED_BODY_FIELD,
     OTHER
 }
+
+/**
+ * Data class representing the health status of an API endpoint
+ *
+ * @property statusCode The HTTP status code returned by the endpoint, or -1 for errors
+ * @property responseTime The time in milliseconds the endpoint took to respond
+ * @property healthy Whether the endpoint is considered healthy (based on status code)
+ * @property errorMessage An error message if the endpoint is unhealthy, null otherwise
+ */
+data class ApiHealthStatus(
+    val statusCode: Int,
+    val responseTime: Long,
+    val healthy: Boolean,
+    val errorMessage: String?
+)
