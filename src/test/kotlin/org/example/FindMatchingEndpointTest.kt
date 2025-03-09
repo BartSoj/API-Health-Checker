@@ -1,9 +1,9 @@
 package org.example
 
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 
@@ -11,6 +11,7 @@ class FindMatchingEndpointTest {
 
     private val standardOut = System.out
     private val outputStreamCaptor = ByteArrayOutputStream()
+    private val apiValidator = ApiValidator()
 
     @BeforeEach
     fun setUp() {
@@ -29,18 +30,18 @@ class FindMatchingEndpointTest {
         val url = "https://api.spotify.com/v1/albums/4aawyAB9vmqN3uQ7FjRGTy/tracks"
         val method = "GET"
 
-        val result = findMatchingEndpoint(url, method)
+        val result = apiValidator.findMatchingEndpoint(url, method)
 
-        assertNotNull(result)
-        assertEquals(url, result?.url)
-        assertEquals("GET", result?.method)
+        Assertions.assertNotNull(result)
+        Assertions.assertEquals(url, result?.url)
+        Assertions.assertEquals("GET", result?.method)
 
         // Instead of checking params which is now deprecated as we changed the EndpointMatch structure
-        assertNotNull(result?.operation?.parameters)
+        Assertions.assertNotNull(result?.operation?.parameters)
 
         // Check that operation has parameters for market, limit, or offset
         val paramNames = result?.operation?.parameters?.mapNotNull { it.name } ?: emptyList()
-        assertTrue(paramNames.any { it in listOf("market", "limit", "offset") })
+        Assertions.assertTrue(paramNames.any { it in listOf("market", "limit", "offset") })
     }
 
     @Test
@@ -48,11 +49,11 @@ class FindMatchingEndpointTest {
         val url = "https://api.spotify.com/v1/invalid/path"
         val method = "GET"
 
-        val result = findMatchingEndpoint(url, method)
+        val result = apiValidator.findMatchingEndpoint(url, method)
         val output = outputStreamCaptor.toString().trim()
 
-        assertNull(result)
-        assertTrue(output.contains("No matching endpoint found for $url with method $method"))
+        Assertions.assertNull(result)
+        Assertions.assertTrue(output.contains("No matching endpoint found for $url with method $method"))
     }
 
     @Test
@@ -60,11 +61,11 @@ class FindMatchingEndpointTest {
         val url = "https://api.spotify.com/v1/albums/4aawyAB9vmqN3uQ7FjRGTy/tracks"
         val method = "POST"
 
-        val result = findMatchingEndpoint(url, method)
+        val result = apiValidator.findMatchingEndpoint(url, method)
         val output = outputStreamCaptor.toString().trim()
 
-        assertNull(result)
-        assertTrue(output.contains("No matching endpoint found for $url with method $method"))
+        Assertions.assertNull(result)
+        Assertions.assertTrue(output.contains("No matching endpoint found for $url with method $method"))
     }
 
     @Test
@@ -72,11 +73,11 @@ class FindMatchingEndpointTest {
         val url = "invalid-url"
         val method = "GET"
 
-        val result = findMatchingEndpoint(url, method)
+        val result = apiValidator.findMatchingEndpoint(url, method)
         val output = outputStreamCaptor.toString().trim()
 
-        assertNull(result)
-        assertTrue(output.contains("No OpenAPI specs found for url: $url"))
+        Assertions.assertNull(result)
+        Assertions.assertTrue(output.contains("No OpenAPI specs found for url: $url"))
     }
 
     @Test
@@ -84,11 +85,11 @@ class FindMatchingEndpointTest {
         val url = "https://api.spotify.com/v1/artists/0TnOYISbd1XYRBk9myaseg"
         val method = "GET"
 
-        val result = findMatchingEndpoint(url, method)
+        val result = apiValidator.findMatchingEndpoint(url, method)
 
-        assertNotNull(result)
-        assertEquals(url, result?.url)
-        assertEquals("GET", result?.method)
+        Assertions.assertNotNull(result)
+        Assertions.assertEquals(url, result?.url)
+        Assertions.assertEquals("GET", result?.method)
     }
 
     @Test
@@ -96,15 +97,15 @@ class FindMatchingEndpointTest {
         val url = "https://api.spotify.com/v1/search?q=tania%20bowra&type=artist"
         val method = "GET"
 
-        val result = findMatchingEndpoint(url, method)
+        val result = apiValidator.findMatchingEndpoint(url, method)
 
-        assertNotNull(result)
-        assertEquals(url, result?.url)
-        assertEquals("GET", result?.method)
+        Assertions.assertNotNull(result)
+        Assertions.assertEquals(url, result?.url)
+        Assertions.assertEquals("GET", result?.method)
 
         // Check that operation has parameters for q or type
         val paramNames = result?.operation?.parameters?.mapNotNull { it.name } ?: emptyList()
-        assertTrue(paramNames.any { it in listOf("q", "type") })
+        Assertions.assertTrue(paramNames.any { it in listOf("q", "type") })
     }
 
     @Test
@@ -112,11 +113,11 @@ class FindMatchingEndpointTest {
         val url = "https://api.spotify.com/v1/tracks/11dFghVXANMlKmJXsNCbNl"
         val method = "GET"
 
-        val result = findMatchingEndpoint(url, method)
+        val result = apiValidator.findMatchingEndpoint(url, method)
 
-        assertNotNull(result)
-        assertEquals(url, result?.url)
-        assertEquals("GET", result?.method)
+        Assertions.assertNotNull(result)
+        Assertions.assertEquals(url, result?.url)
+        Assertions.assertEquals("GET", result?.method)
     }
 
     @Test
@@ -124,74 +125,68 @@ class FindMatchingEndpointTest {
         val url = "https://api.spotify.com/v1/audio-analysis/11dFghVXANMlKmJXsNCbNl"
         val method = "GET"
 
-        val result = findMatchingEndpoint(url, method)
+        val result = apiValidator.findMatchingEndpoint(url, method)
 
-        assertNotNull(result)
-        assertEquals(url, result?.url)
-        assertEquals("GET", result?.method)
+        Assertions.assertNotNull(result)
+        Assertions.assertEquals(url, result?.url)
+        Assertions.assertEquals("GET", result?.method)
     }
 
     @Test
     fun `validateRequest should validate correct parameters`() {
         val url = "https://api.spotify.com/v1/albums/4aawyAB9vmqN3uQ7FjRGTy/tracks"
         val method = "GET"
-        val endpointMatch = findMatchingEndpoint(url, method)
+        val endpointMatch = apiValidator.findMatchingEndpoint(url, method)
 
-        assertNotNull(endpointMatch)
+        Assertions.assertNotNull(endpointMatch)
 
         val validParams = mapOf(
             "market" to "US", "limit" to "10", "offset" to "0"
         )
 
-        val result = validateRequest(
-            endpointMatch = endpointMatch!!,
-            params = validParams,
-            requestBody = null
+        val result = apiValidator.validateRequest(
+            endpointMatch = endpointMatch!!, params = validParams, requestBody = null
         )
 
-        assertTrue(result.isValid)
-        assertTrue(result.errors.isEmpty())
+        Assertions.assertTrue(result.isValid)
+        Assertions.assertTrue(result.errors.isEmpty())
     }
 
     @Test
     fun `validateRequest should identify invalid parameter types`() {
         val url = "https://api.spotify.com/v1/albums/4aawyAB9vmqN3uQ7FjRGTy/tracks"
         val method = "GET"
-        val endpointMatch = findMatchingEndpoint(url, method)
+        val endpointMatch = apiValidator.findMatchingEndpoint(url, method)
 
-        assertNotNull(endpointMatch)
+        Assertions.assertNotNull(endpointMatch)
 
         val invalidParams = mapOf(
             "limit" to "not-a-number",  // Should be a number
             "offset" to "0"
         )
 
-        val result = validateRequest(
-            endpointMatch = endpointMatch!!,
-            params = invalidParams,
-            requestBody = null
+        val result = apiValidator.validateRequest(
+            endpointMatch = endpointMatch!!, params = invalidParams, requestBody = null
         )
 
-        assertFalse(result.isValid)
-        assertTrue(result.errors.isNotEmpty())
-        assertEquals(ValidationErrorType.INVALID_PARAMETER_TYPE, result.errors[0].type)
+        Assertions.assertFalse(result.isValid)
+        Assertions.assertTrue(result.errors.isNotEmpty())
+        Assertions.assertEquals(ValidationErrorType.INVALID_PARAMETER_TYPE, result.errors[0].type)
     }
 
     @Test
     fun `validateRequest should identify missing required parameters`() {
         val url = "https://api.spotify.com/v1/search"  // Search endpoint typically requires q & type params
         val method = "GET"
-        val endpointMatch = findMatchingEndpoint(url, method)
+        val endpointMatch = apiValidator.findMatchingEndpoint(url, method)
 
-        assertNotNull(endpointMatch)
+        Assertions.assertNotNull(endpointMatch)
 
         // Empty params map - will miss any required parameters
         val emptyParams = emptyMap<String, String>()
 
-        val result = validateRequest(
-            endpointMatch = endpointMatch!!,
-            params = emptyParams,
-            requestBody = null
+        val result = apiValidator.validateRequest(
+            endpointMatch = endpointMatch!!, params = emptyParams, requestBody = null
         )
 
         val requiredParams =
@@ -199,9 +194,9 @@ class FindMatchingEndpointTest {
                 ?: emptyList()
 
         if (requiredParams.isNotEmpty()) {
-            assertFalse(result.isValid)
-            assertTrue(result.errors.isNotEmpty())
-            assertEquals(ValidationErrorType.MISSING_REQUIRED_PARAMETER, result.errors[0].type)
+            Assertions.assertFalse(result.isValid)
+            Assertions.assertTrue(result.errors.isNotEmpty())
+            Assertions.assertEquals(ValidationErrorType.MISSING_REQUIRED_PARAMETER, result.errors[0].type)
         }
     }
 
@@ -210,7 +205,7 @@ class FindMatchingEndpointTest {
         // Find a POST endpoint that requires a request body
         val url = "https://api.spotify.com/v1/users/31k53kp5qvav5erqjrari3opeagi/playlists"
         val method = "POST"
-        val endpointMatch = findMatchingEndpoint(url, method)
+        val endpointMatch = apiValidator.findMatchingEndpoint(url, method)
 
         // If we can't find this endpoint in the spec, skip the test
         if (endpointMatch == null) {
@@ -226,10 +221,8 @@ class FindMatchingEndpointTest {
             }
         """.trimIndent()
 
-        validateRequest(
-            endpointMatch = endpointMatch,
-            params = emptyMap(),
-            requestBody = validBody
+        apiValidator.validateRequest(
+            endpointMatch = endpointMatch, params = emptyMap(), requestBody = validBody
         )
 
         // If the endpoint doesn't have required fields, this test won't be meaningful
@@ -244,15 +237,13 @@ class FindMatchingEndpointTest {
             // Now test with invalid body missing required fields
             val invalidBody = "{}"
 
-            val invalidResult = validateRequest(
-                endpointMatch = endpointMatch,
-                params = emptyMap(),
-                requestBody = invalidBody
+            val invalidResult = apiValidator.validateRequest(
+                endpointMatch = endpointMatch, params = emptyMap(), requestBody = invalidBody
             )
 
-            assertFalse(invalidResult.isValid)
-            assertTrue(invalidResult.errors.isNotEmpty())
-            assertTrue(invalidResult.errors.any { it.type == ValidationErrorType.MISSING_REQUIRED_BODY_FIELD })
+            Assertions.assertFalse(invalidResult.isValid)
+            Assertions.assertTrue(invalidResult.errors.isNotEmpty())
+            Assertions.assertTrue(invalidResult.errors.any { it.type == ValidationErrorType.MISSING_REQUIRED_BODY_FIELD })
         }
     }
 }
