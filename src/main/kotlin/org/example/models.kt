@@ -67,3 +67,20 @@ data class ApiHealthStatus(
     val healthy: Boolean,
     val errorMessage: String?
 )
+
+/**
+ * Data class representing a parsed API request from user input
+ *
+ * @property url The URL to send the request to
+ * @property method The HTTP method to use
+ * @property queryParams Query parameters to include in the request
+ * @property headers Headers to include in the request
+ * @property body Body to include in the request
+ */
+data class ParsedRequest(
+    val url: String,
+    val method: String = "GET",
+    val queryParams: Map<String, String> = emptyMap(),
+    val headers: Map<String, String> = emptyMap(),
+    val body: String? = null
+)
