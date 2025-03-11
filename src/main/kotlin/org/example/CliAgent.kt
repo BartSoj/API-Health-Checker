@@ -6,7 +6,7 @@ import kotlin.random.Random
  * Agent class for processing API health check requests
  * Orchestrates parsing, validation, and execution of API health checks
  */
-class ApiHealthCheckerAgent {
+class CliAgent {
     private val apiValidator = ApiValidator()
     private val apiHealthChecker = ApiHealthChecker()
     private val syntheticTool = SyntheticTool()
@@ -22,7 +22,7 @@ class ApiHealthCheckerAgent {
         val parsedRequest = RequestParser.parse(request)
 
         if (parsedRequest == null) {
-            return "Invalid request format. Expected: \"Determine the HTTP status of <URL> [with query parameters <params>] [with headers <headers>] [and body <body>]\"."
+            return "Invalid request format. Expected: \"Determine the status of <URL> [with query parameters <params>] [with headers <headers>] [and body <body>]\"."
         }
 
         // Validate the request against OpenAPI specifications
@@ -87,7 +87,7 @@ class ApiHealthCheckerAgent {
      * @return True if the synthetic tool should be used, false otherwise
      */
     private fun shouldUseSyntheticTool(): Boolean {
-        return Random.nextInt(0, 5) == 0
+        return false  // Temporary, think of better way how to determine when to use synthetic tool
     }
 
     /**

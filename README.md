@@ -7,7 +7,7 @@
 2. Input Format
 
     - Accepted Request Pattern:
-      `Determine the HTTP status of <URL> with query parameters <query> with headers <headers> and body <body>`
+      `Determine the status of <URL> with query parameters <query> with headers <headers> and body <body>`
 
     - Mandatory:
     - URL: A valid HTTP/HTTPS URL.
@@ -84,3 +84,59 @@
       generation.
     - Documentation:
     - Include clear inline comments and documentation for each module.
+
+# Example Agent queries
+
+### Correctly Structured Requests
+
+```
+"Determine the status of https://api.spotify.com/v1/tracks/3n3Ppam7vgaVa1iaRUc9Lp with query parameters market=US"
+
+"Determine the status of https://api.spotify.com/v1/playlists/3cEYpjA9oz9GiPac4AsH4n with headers Authorization=Bearer abc123 and body { \"name\": \"My Playlist\" }"
+
+"Determine the status of https://api.spotify.com/v1/recommendations with query parameters seed_artists=4NHQUGzhtTLFvgF5SZesLK,seed_genres=pop,seed_tracks=0c6xIDDpzE81m2q797ordA"
+
+"Determine the status of https://tasks.googleapis.com/tasks/v1/users/@me/lists"
+
+"Determine the status of https://tasks.googleapis.com/tasks/v1/users/@me/lists/taskList123"
+
+"Determine the status of https://tasks.googleapis.com/tasks/v1/users/@me/lists with headers Authorization=Bearer abc123 and body { \"title\": \"New Task List\" }"
+
+"Determine the status of https://tasks.googleapis.com/tasks/v1/lists/taskList123/tasks with query parameters showCompleted=true, maxResults=10"
+
+"Determine the status of https://tasks.googleapis.com/tasks/v1/lists/taskList123/tasks with headers Authorization=Bearer abc123 and body { \"title\": \"New Task\", \"notes\": \"Complete this by Monday.\" }"
+
+"Determine the status of https://httpbin.org/status/418"
+
+"Determine the status of https://httpbin.org/status/200"
+
+"Determine the status of https://httpbin.org/status/500"
+
+"Determine the status of https://httpbin.org/delay/10"
+
+"Determine the status of https://httpbin.org/status/404"
+```
+
+### Incorrectly Structured Requests
+
+```
+"Determine the status of with query parameters market=US"
+
+"Determine the status of https://api.spotify.com/v1/me/player/play"
+
+"Determine the status of https://api.spotify.com/v1/tracks with body instead of query parameters"
+
+"Determine the status of https://api.spotify.com/v1/me with query parameters market=US"
+
+"Determine the status of with query parameters maxResults=10"
+
+"Determine the status of https://tasks.googleapis.com/tasks/v1/lists/taskList123/tasks/task123 with body { \"status\": \"completed\" }"
+
+"Determine the status of https://tasks.googleapis.com/tasks/v1/lists/taskList123/tasks?showCompleted-true"
+
+"Determine the status of https://tasks.googleapis.com/tasks/v1/lists//tasks/task123"
+
+"Determine the status of https://httpbin.org/post"
+
+"Determine the status of https://httpbin.org/invalidendpoint"
+```

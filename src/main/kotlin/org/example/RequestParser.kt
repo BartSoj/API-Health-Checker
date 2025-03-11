@@ -6,7 +6,7 @@ package org.example
 object RequestParser {
     // Regular expression to match the expected request format
     private val REQUEST_PATTERN = Regex(
-        "Determine the HTTP status of (\\S+)" +
+        "Determine the status of (\\S+)" +
                 "(?:\\s+with\\s+query\\s+parameters\\s+(.+?))?" +
                 "(?:\\s+with\\s+headers\\s+(.+?))?" +
                 "(?:\\s+and\\s+body\\s+(.+))?",

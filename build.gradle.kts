@@ -16,6 +16,7 @@ dependencies {
     implementation("io.ktor:ktor-client-serialization:3.1.1")
     implementation("io.ktor:ktor-client-content-negotiation:3.1.1")
     implementation("io.ktor:ktor-serialization-kotlinx-json:3.1.1")
+    implementation("com.varabyte.kotter:kotter:1.2.1")
 }
 
 group = "org.example"
