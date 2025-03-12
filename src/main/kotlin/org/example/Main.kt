@@ -111,7 +111,7 @@ fun main() = session {
                     agentResponse = agent.processRequest(userText)
 
                     // Small delay to simulate agent thinking
-                    delay(1000)
+                    delay(500)
 
                     // Add to conversation history
                     history.add(Message("user", userText))

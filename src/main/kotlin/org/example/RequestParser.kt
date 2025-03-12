@@ -57,14 +57,13 @@ object RequestParser {
     private fun parseKeyValuePairs(input: String): Map<String, String> {
         if (input.isBlank()) return emptyMap()
 
-        return input.split("&")
+        return input.split(",\\s*".toRegex())
             .map { it.trim() }
             .mapNotNull { pair ->
                 val parts = pair.split("=", limit = 2)
                 if (parts.size == 2) {
                     parts[0].trim() to parts[1].trim()
                 } else {
-                    // Handle header-style key-value pairs (key: value)
                     val colonParts = pair.split(":", limit = 2)
                     if (colonParts.size == 2) {
                         colonParts[0].trim() to colonParts[1].trim()
