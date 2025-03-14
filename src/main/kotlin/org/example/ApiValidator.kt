@@ -14,20 +14,11 @@ class ApiValidator {
     /**
      * List of OpenAPI specification files to validate against.
      */
-    private val openApiFiles = listOf(
-        "api_specs/calendar_openapi.json",
-        "api_specs/discord_openapi.json",
-        "api_specs/docs_openapi.json",
-        "api_specs/drive_openapi.json",
-        "api_specs/gmail_openapi.json",
-        "api_specs/people_openapi.json",
-        "api_specs/script_openapi.json",
-        "api_specs/sheets_openapi.json",
-        "api_specs/slides_openapi.json",
-        "api_specs/spotify_openapi.json",
-        "api_specs/tasks_openapi.json",
-        "api_specs/wolfram_openapi.json"
-    )
+    private val openApiFiles: List<String> = File("api_specs").listFiles()
+        ?.filter { it.isFile && it.extension.equals("json", ignoreCase = true) }
+        ?.map { it.path }
+        ?.sorted()
+        ?: emptyList()
 
     /**
      * Parses an OpenAPI specification file.
