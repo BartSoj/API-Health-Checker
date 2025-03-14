@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 
-class FindMatchingEndpointTest {
+class ApiValidatorTest {
 
     private val standardOut = System.out
     private val outputStreamCaptor = ByteArrayOutputStream()
