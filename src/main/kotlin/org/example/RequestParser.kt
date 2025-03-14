@@ -6,7 +6,7 @@ package org.example
 object RequestParser {
     // Regular expression to match the expected request format
     private val REQUEST_PATTERN = Regex(
-        "Determine the status of (\\S+)" +
+        "Determine the status of (\\S+) using (GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)" +
                 "(?:\\s+with\\s+query\\s+parameters\\s+(.+?))?" +
                 "(?:\\s+with\\s+headers\\s+(.+?))?" +
                 "(?:\\s+and\\s+body\\s+(.+))?",
@@ -23,12 +23,10 @@ object RequestParser {
         val matchResult = REQUEST_PATTERN.matchEntire(input.trim()) ?: return null
 
         val url = matchResult.groupValues[1]
-        val queryParamsString = matchResult.groupValues[2]
-        val headersString = matchResult.groupValues[3]
-        val bodyString = matchResult.groupValues[4]
-
-        // Default to GET method
-        val method = "GET"
+        val method = matchResult.groupValues[2].uppercase()
+        val queryParamsString = matchResult.groupValues[3]
+        val headersString = matchResult.groupValues[4]
+        val bodyString = matchResult.groupValues[5]
 
         // Parse query parameters
         val queryParams = parseKeyValuePairs(queryParamsString)

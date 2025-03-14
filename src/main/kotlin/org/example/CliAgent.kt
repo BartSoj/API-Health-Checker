@@ -20,7 +20,7 @@ class CliAgent {
         val parsedRequest = RequestParser.parse(request)
 
         if (parsedRequest == null) {
-            return "Invalid request format. Expected: \"Determine the status of <URL> [with query parameters <params>] [with headers <headers>] [and body <body>]\"."
+            return "Invalid request format. Expected: \"Determine the status of <URL> using <METHOD> [with query parameters <params>] [with headers <headers>] [and body <body>]\"."
         }
 
         // Validate the request against OpenAPI specifications

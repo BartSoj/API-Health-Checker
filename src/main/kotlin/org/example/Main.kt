@@ -59,7 +59,7 @@ fun main() = session {
             textLine()
             infoColor {
                 textLine("API Health Checker - Type a request or 'exit' to quit")
-                textLine("Example: \"Determine the status of https://jsonplaceholder.typicode.com/posts\"")
+                textLine("Example: \"Determine the status of https://jsonplaceholder.typicode.com/posts\" using GET")
                 textLine()
             }
 
