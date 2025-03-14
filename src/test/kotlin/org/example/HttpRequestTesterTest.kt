@@ -5,18 +5,18 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import kotlin.test.assertNotNull
 
-class ApiHealthCheckerTest {
+class HttpRequestTesterTest {
 
-    private val apiHealthChecker = ApiHealthChecker()
+    private val httpRequestTester = HttpRequestTester()
 
     @AfterEach
     fun cleanup() {
-        apiHealthChecker.close()
+        httpRequestTester.close()
     }
 
     @Test
     fun `checkHealth should return healthy status for successful response`() {
-        val result = apiHealthChecker.checkHealth(
+        val result = httpRequestTester.checkHealth(
             url = "https://httpbin.org/get", method = "GET"
         )
 
@@ -28,7 +28,7 @@ class ApiHealthCheckerTest {
 
     @Test
     fun `checkHealth should return unhealthy status for 404 response`() {
-        val result = apiHealthChecker.checkHealth(
+        val result = httpRequestTester.checkHealth(
             url = "https://httpbin.org/status/404", method = "GET"
         )
 
@@ -41,7 +41,7 @@ class ApiHealthCheckerTest {
     @Test
     fun `checkHealth should handle POST requests with body`() {
         val body = """{"test": "value"}"""
-        val result = apiHealthChecker.checkHealth(
+        val result = httpRequestTester.checkHealth(
             url = "https://httpbin.org/post", method = "POST", body = body
         )
 
@@ -52,7 +52,7 @@ class ApiHealthCheckerTest {
     @Test
     fun `checkHealth should handle request parameters`() {
         val params = mapOf("param1" to "value1", "param2" to "value2")
-        val result = apiHealthChecker.checkHealth(
+        val result = httpRequestTester.checkHealth(
             url = "https://httpbin.org/get", method = "GET", params = params
         )
 
@@ -62,7 +62,7 @@ class ApiHealthCheckerTest {
 
     @Test
     fun `checkHealth should handle timeout errors`() {
-        val result = apiHealthChecker.checkHealth(
+        val result = httpRequestTester.checkHealth(
             url = "https://httpbin.org/delay/10", method = "GET"
         )
 

@@ -1,183 +1,142 @@
 package org.example
 
-/**
- * Agent class for processing API health check requests
- * Orchestrates parsing, validation, and execution of API health checks
- */
-class CliAgent {
-    private val apiValidator = ApiValidator()
-    private val apiHealthChecker = ApiHealthChecker()
-    private val syntheticTool = SyntheticTool()
+import com.varabyte.kotter.foundation.*
+import com.varabyte.kotter.foundation.anim.*
+import com.varabyte.kotter.foundation.input.*
+import com.varabyte.kotter.foundation.shutdown.*
+import com.varabyte.kotter.foundation.text.*
+import com.varabyte.kotter.runtime.render.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
+class CliAgent(private val apiHealthChecker: ApiHealthChecker) {
     /**
-     * Process a user request to check the health of an API endpoint
-     *
-     * @param request The user request string
-     * @return A response message to display to the user
+     * Represents the current state of the CLI
      */
-    fun processRequest(request: String): String {
-        // Parse the input request
-        val parsedRequest = RequestParser.parse(request)
-
-        if (parsedRequest == null) {
-            return "Invalid request format. Expected: \"Determine the status of <URL> using <METHOD> [with query parameters <params>] [with headers <headers>] [and body <body>]\"."
-        }
-
-        // Validate the request against OpenAPI specifications
-        val endpoint = apiValidator.findMatchingEndpoint(parsedRequest.url, parsedRequest.method)
-
-        if (endpoint == null) {
-            return formatEndpointNotFoundError(parsedRequest.url, parsedRequest.method)
-        }
-
-        // Validate request parameters against the OpenAPI spec
-        val validationResult = apiValidator.validateRequest(
-            endpointMatch = endpoint,
-            params = parsedRequest.queryParams,
-            requestBody = parsedRequest.body
-        )
-
-        if (!validationResult.isValid) {
-            return formatValidationError(validationResult, endpoint)
-        }
-
-        // Decide which tool to use for checking health
-        return if (shouldUseSyntheticTool()) {
-            // Use synthetic tool
-            val status = syntheticTool.checkHealth(parsedRequest)
-            formatResponse(parsedRequest.url, status)
-        } else {
-            // Use real HTTP client
-            try {
-                val status = apiHealthChecker.checkHealth(
-                    url = parsedRequest.url,
-                    method = parsedRequest.method,
-                    params = parsedRequest.queryParams,
-                    body = parsedRequest.body,
-                    headers = parsedRequest.headers
-                )
-                formatResponse(parsedRequest.url, status)
-            } catch (e: Exception) {
-                "Error: Unable to reach ${parsedRequest.url}: ${e.message ?: "Unknown error occurred"}"
-            }
-        }
+    enum class State {
+        USER_TYPING, AGENT_THINKING, AGENT_RESPONDED
     }
 
     /**
-     * Formats the API health status response according to the required output format
-     *
-     * @param url The URL that was checked
-     * @param status The API health status
-     * @return A formatted response string
+     * Represents a message in the conversation history
      */
-    private fun formatResponse(url: String, status: ApiHealthStatus): String {
-        return if (status.statusCode == -1) {
-            "Error: Unable to reach $url: ${status.errorMessage ?: "Connection failed"}"
-        } else {
-            val healthStatus = if (status.healthy) "healthy" else "unhealthy"
-            val responseTime = "${status.responseTime}ms"
-
-            "The HTTP status of $url is ${status.statusCode} ($healthStatus, response time: $responseTime)." +
-                    if (!status.healthy && status.errorMessage != null) " Error: ${status.errorMessage}" else ""
-        }
-    }
+    data class Message(
+        val role: String, val content: String
+    )
 
     /**
-     * Formats error message for cases when no matching endpoint is found
-     *
-     * @param url The URL that was checked
-     * @param method The HTTP method that was used
-     * @return A formatted error message with detailed information
+     * Starts the CLI agent and handles user interactions
      */
-    private fun formatEndpointNotFoundError(url: String, method: String): String {
+    fun start() = session {
         try {
-            val urlObj = io.ktor.http.Url(url)
-            val host = urlObj.host
-            val path = urlObj.encodedPath
+            var state by liveVarOf(State.USER_TYPING)
+            var userText by liveVarOf("")
+            var agentResponse by liveVarOf("")
+            val thinkingAnim = textAnimOf(listOf("⠋", "⠙", "⠸", "⠴", "⠦", "⠇"), 150.milliseconds)
+            val history = mutableListOf<Message>()
 
-            return "No matching endpoint found for $method $path on host $host. " +
-                    "Please check that the URL is correct and the API is supported by our OpenAPI specifications."
-        } catch (_: Exception) {
-            return "Invalid URL format for $url. Please provide a valid URL."
-        }
-    }
+            val userPrompt = "🔍 > "
+            val agentPrompt = "🤖 > "
 
-    /**
-     * Formats validation error messages based on the validation result
-     *
-     * @param result The validation result containing errors
-     * @param endpoint The matched endpoint information
-     * @return A formatted error message with detailed information
-     */
-    private fun formatValidationError(result: ValidationResult, endpoint: EndpointMatch): String {
-        val sb = StringBuilder("Invalid request for ${endpoint.method} ${endpoint.pathPattern}: ")
+            fun RenderScope.userColor(block: RenderScope.() -> Unit) {
+                white(scopedBlock = block)
+            }
 
-        if (result.errors.isEmpty()) {
-            return sb.append("Unknown validation error.").toString()
-        }
+            fun RenderScope.agentColor(block: RenderScope.() -> Unit) {
+                cyan(scopedBlock = block)
+            }
 
-        // Group errors by type for better organization
-        val errorsByType = result.errors.groupBy { it.type }
+            fun RenderScope.infoColor(block: RenderScope.() -> Unit) {
+                black(isBright = true, scopedBlock = block)
+            }
 
-        errorsByType.forEach { (type, errors) ->
-            when (type) {
-                ValidationErrorType.MISSING_REQUIRED_PARAMETER -> {
-                    sb.append("Missing required query parameter(s): ")
-                    sb.append(errors.mapNotNull { it.field }.joinToString(", "))
+            section {
+                textLine()
+                infoColor {
+                    textLine("API Health Checker - Type a request or 'exit' to quit")
+                    textLine("Example: \"Determine the status of https://jsonplaceholder.typicode.com/posts\" using GET")
+                    textLine()
                 }
 
-                ValidationErrorType.INVALID_PARAMETER_TYPE -> {
-                    sb.append("Parameter type error(s): ")
-                    errors.forEach { error ->
-                        sb.append("${error.field} - ${error.message}. ")
+                // Display conversation history
+                history.forEach { message ->
+                    when (message.role) {
+                        "user" -> userColor { text(userPrompt); textLine(message.content) }
+                        "agent" -> agentColor { text(agentPrompt); textLine(message.content) }
+                    }
+                    textLine()
+                }
+
+                // Display current state
+                when (state) {
+                    State.USER_TYPING -> {
+                        userColor { text(userPrompt); input() }
+                    }
+
+                    State.AGENT_THINKING -> {
+                        userColor { text(userPrompt); textLine(userText) }
+                        textLine()
+                        agentColor { text(agentPrompt); text(thinkingAnim) }
+                    }
+
+                    State.AGENT_RESPONDED -> {
+                        userColor { text(userPrompt); textLine(userText) }
+                        textLine()
+                        agentColor { text(agentPrompt); textLine(agentResponse) }
+                        textLine()
+                        userColor { text(userPrompt); input() }
+                    }
+                }
+            }.run {
+                var shouldQuit = false
+                addShutdownHook { shouldQuit = true }
+
+                onInputEntered {
+                    if (input.trim().equals("exit", ignoreCase = true)) {
+                        shouldQuit = true
+                        return@onInputEntered
+                    }
+
+                    userText = input
+                    state = State.AGENT_THINKING
+
+                    // Process the request in a coroutine
+                    CoroutineScope(Dispatchers.IO).launch {
+                        // Call ApiHealthChecker to process request
+                        agentResponse = apiHealthChecker.processRequest(userText)
+
+                        // Small delay to simulate agent thinking
+                        delay(500)
+
+                        // Add to conversation history
+                        history.add(Message("user", userText))
+                        history.add(Message("agent", agentResponse))
+
+                        // Reset for next interaction
+                        userText = ""
+                        agentResponse = ""
+
+                        // Move to next state
+                        state = State.USER_TYPING
+
+                        // Clear the input field
+                        setInput("")
                     }
                 }
 
-                ValidationErrorType.MISSING_REQUIRED_BODY -> {
-                    sb.append("Request body is required but was not provided. ")
-                }
-
-                ValidationErrorType.INVALID_CONTENT_TYPE -> {
-                    sb.append("Content type error: ${errors.firstOrNull()?.message ?: "Unsupported content type"}. ")
-                }
-
-                ValidationErrorType.INVALID_BODY_STRUCTURE -> {
-                    sb.append("Invalid JSON body structure: ${errors.firstOrNull()?.message}. ")
-                }
-
-                ValidationErrorType.INVALID_BODY_FIELD_TYPE -> {
-                    sb.append("Invalid field type(s) in request body: ")
-                    sb.append(errors.mapNotNull { it.field }.joinToString(", "))
-                }
-
-                ValidationErrorType.MISSING_REQUIRED_BODY_FIELD -> {
-                    sb.append("Missing required field(s) in request body: ")
-                    sb.append(errors.mapNotNull { it.field }.joinToString(", "))
-                }
-
-                ValidationErrorType.OTHER -> {
-                    sb.append(errors.firstOrNull()?.message ?: "Unknown error")
+                var lastState = state
+                while (!shouldQuit) {
+                    if (lastState != state) {
+                        lastState = state
+                    }
+                    delay(Anim.ONE_FRAME_60FPS)
                 }
             }
+        } finally {
+            apiHealthChecker.close()
         }
-
-        return sb.toString()
-    }
-
-    /**
-     * Decides whether to use the synthetic tool instead of real HTTP requests
-     * This can be based on various conditions like specific domains, testing mode, etc.
-     *
-     * @return True if the synthetic tool should be used, false otherwise
-     */
-    private fun shouldUseSyntheticTool(): Boolean {
-        return false  // Temporary, think of better way how to determine when to use synthetic tool
-    }
-
-    /**
-     * Cleanup resources when the agent is no longer needed
-     */
-    fun close() {
-        apiHealthChecker.close()
     }
 }
