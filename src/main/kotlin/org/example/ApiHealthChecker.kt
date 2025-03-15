@@ -60,8 +60,8 @@ class ApiHealthChecker(
                         headers = parsedRequest.headers
                     )
                     formatResponse(parsedRequest.url, status)
-                } catch (e: Exception) {
-                    "Error: Unable to reach ${parsedRequest.url}: ${e.message ?: "Unknown error occurred"}"
+                } catch (_: Exception) {
+                    "I'm having difficulty connecting to ${parsedRequest.url}. This could be due to network issues, the server being down, or an incorrect URL."
                 }
             }
         }
@@ -76,12 +76,18 @@ class ApiHealthChecker(
      */
     private fun formatResponse(url: String, status: ApiHealthStatus): String {
         return if (status.statusCode == -1) {
-            "Error: Unable to reach $url: ${status.errorMessage ?: "Connection failed"}"
+            "I'm having trouble connecting to $url. ${status.errorMessage ?: "The server isn't responding or there might be a network issue"}."
         } else {
-            val healthStatus = if (status.healthy) "healthy" else "unhealthy"
+            val healthStatus = if (status.healthy) "healthy" else "experiencing issues"
             val responseTime = "${status.responseTime}ms"
 
-            "The HTTP status of $url is ${status.statusCode} ($healthStatus, response time: $responseTime)." + if (!status.healthy && status.errorMessage != null) " Error: ${status.errorMessage}" else ""
+            when {
+                status.healthy -> "The API at $url is responding correctly with a ${status.statusCode} status code. " + "The response time was $responseTime, which ${if (status.responseTime < 300) "is excellent" else if (status.responseTime < 1000) "is good" else "is a bit slow but acceptable"}."
+
+                status.errorMessage != null -> "I was able to reach $url, but the API is $healthStatus. " + "It returned a ${status.statusCode} status code in $responseTime. " + "The specific error is: ${status.errorMessage}."
+
+                else -> "I reached $url and got a ${status.statusCode} status code in $responseTime. " + "The API appears to be $healthStatus."
+            }
         }
     }
 
@@ -98,9 +104,9 @@ class ApiHealthChecker(
             val host = urlObj.host
             val path = urlObj.encodedPath
 
-            return "No matching endpoint found for $method $path on host $host. " + "Please check that the URL is correct and the API is supported by our OpenAPI specifications."
+            return "I couldn't find an API endpoint for $method $path on $host. " + "Please check that the URL is correct and the API is supported by our OpenAPI specifications."
         } catch (_: Exception) {
-            return "Invalid URL format for $url. Please provide a valid URL."
+            return "The URL format '$url' doesn't seem to be valid. A proper URL should look like 'https://example.com/api/resource'."
         }
     }
 
@@ -112,10 +118,11 @@ class ApiHealthChecker(
      * @return A formatted error message with detailed information
      */
     private fun formatValidationError(result: ValidationResult, endpoint: EndpointMatch): String {
-        val sb = StringBuilder("Invalid request for ${endpoint.method} ${endpoint.pathPattern}: ")
+        val sb =
+            StringBuilder("I noticed some issues with your request to ${endpoint.pathPattern} using ${endpoint.method}: ")
 
         if (result.errors.isEmpty()) {
-            return sb.append("Unknown validation error.").toString()
+            return sb.append("There appears to be an issue, but I couldn't determine the exact problem.").toString()
         }
 
         // Group errors by type for better organization
@@ -124,41 +131,39 @@ class ApiHealthChecker(
         errorsByType.forEach { (type, errors) ->
             when (type) {
                 ValidationErrorType.MISSING_REQUIRED_PARAMETER -> {
-                    sb.append("Missing required query parameter(s): ")
-                    sb.append(errors.mapNotNull { it.field }.joinToString(", "))
+                    val params = errors.mapNotNull { it.field }.joinToString(", ")
+                    sb.append("You need to provide the following required parameter${if (errors.size > 1) "s" else ""}: $params. ")
                 }
 
                 ValidationErrorType.INVALID_PARAMETER_TYPE -> {
-                    sb.append("Parameter type error(s): ")
-                    errors.forEach { error ->
-                        sb.append("${error.field} - ${error.message}. ")
-                    }
+                    val params = errors.mapNotNull { it.field }.joinToString(", ")
+                    sb.append("The value${if (errors.size > 1) "s" else ""} for parameter${if (errors.size > 1) "s" else ""} $params ${if (errors.size > 1) "are" else "is"} not in the correct format. ")
                 }
 
                 ValidationErrorType.MISSING_REQUIRED_BODY -> {
-                    sb.append("Request body is required but was not provided. ")
+                    sb.append("This endpoint requires a request body, but none was provided. ")
                 }
 
                 ValidationErrorType.INVALID_CONTENT_TYPE -> {
-                    sb.append("Content type error: ${errors.firstOrNull()?.message ?: "Unsupported content type"}. ")
+                    sb.append("The API only accepts application/json content type for this request. ")
                 }
 
                 ValidationErrorType.INVALID_BODY_STRUCTURE -> {
-                    sb.append("Invalid JSON body structure: ${errors.firstOrNull()?.message}. ")
+                    sb.append("The JSON body you provided isn't properly formatted. Please check for syntax errors. ")
                 }
 
                 ValidationErrorType.INVALID_BODY_FIELD_TYPE -> {
-                    sb.append("Invalid field type(s) in request body: ")
-                    sb.append(errors.mapNotNull { it.field }.joinToString(", "))
+                    val fields = errors.mapNotNull { it.field }.joinToString(", ")
+                    sb.append("The type${if (errors.size > 1) "s" else ""} of field${if (errors.size > 1) "s" else ""} $fields in your request body ${if (errors.size > 1) "are" else "is"} incorrect. ")
                 }
 
                 ValidationErrorType.MISSING_REQUIRED_BODY_FIELD -> {
-                    sb.append("Missing required field(s) in request body: ")
-                    sb.append(errors.mapNotNull { it.field }.joinToString(", "))
+                    val fields = errors.mapNotNull { it.field }.joinToString(", ")
+                    sb.append("Your request body is missing required field${if (errors.size > 1) "s" else ""}: $fields. ")
                 }
 
                 ValidationErrorType.OTHER -> {
-                    sb.append(errors.firstOrNull()?.message ?: "Unknown error")
+                    sb.append("There's an issue with your request body - it wasn't expected for this endpoint. ")
                 }
             }
         }

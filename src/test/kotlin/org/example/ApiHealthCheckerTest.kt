@@ -49,7 +49,7 @@ class ApiHealthCheckerTest {
 
         val result = apiHealthChecker.processRequest(request)
 
-        assertTrue(result.contains("No matching endpoint found"))
+        assertTrue(result.contains("I couldn't find an API endpoint"))
         verify(requestParser).parse(request)
         verify(apiValidator).findMatchingEndpoint(parsedRequest.url, parsedRequest.method)
         verifyNoInteractions(httpRequestTester)
@@ -69,7 +69,7 @@ class ApiHealthCheckerTest {
         val validationResult = ValidationResult(
             isValid = false, errors = listOf(
                 ValidationError(
-                    ValidationErrorType.MISSING_REQUIRED_PARAMETER, "Missing required parameter", "requiredParam"
+                    ValidationErrorType.MISSING_REQUIRED_PARAMETER, "requiredParam"
                 )
             )
         )
@@ -82,7 +82,7 @@ class ApiHealthCheckerTest {
 
         val result = apiHealthChecker.processRequest(request)
 
-        assertTrue(result.contains("Invalid request"))
+        assertTrue(result.contains("I noticed some issues"))
         verify(requestParser).parse(request)
         verify(apiValidator).findMatchingEndpoint(parsedRequest.url, parsedRequest.method)
         verify(apiValidator).validateRequest(endpointMatch, parsedRequest.queryParams, parsedRequest.body)
@@ -122,9 +122,9 @@ class ApiHealthCheckerTest {
 
         val result = apiHealthChecker.processRequest(request)
 
-        assertTrue(result.contains("HTTP status of"))
+        assertTrue(result.contains("The API at"))
         assertTrue(result.contains("200"))
-        assertTrue(result.contains("healthy"))
+        assertTrue(result.contains("responding correctly"))
         verify(requestParser).parse(request)
         verify(apiValidator).findMatchingEndpoint(parsedRequest.url, parsedRequest.method)
         verify(apiValidator).validateRequest(endpointMatch, parsedRequest.queryParams, parsedRequest.body)

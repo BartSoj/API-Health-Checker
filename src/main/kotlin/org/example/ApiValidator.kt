@@ -161,9 +161,7 @@ class ApiValidator(
             if (!params.containsKey(param.name)) {
                 errors.add(
                     ValidationError(
-                        ValidationErrorType.MISSING_REQUIRED_PARAMETER,
-                        "Missing required query parameter: ${param.name}",
-                        param.name
+                        ValidationErrorType.MISSING_REQUIRED_PARAMETER, param.name
                     )
                 )
             }
@@ -177,9 +175,7 @@ class ApiValidator(
                 if (!validateParameterType(paramValue, schema)) {
                     errors.add(
                         ValidationError(
-                            ValidationErrorType.INVALID_PARAMETER_TYPE,
-                            "Query parameter $paramName has invalid type or format",
-                            paramName
+                            ValidationErrorType.INVALID_PARAMETER_TYPE, paramName
                         )
                     )
                 }
@@ -193,7 +189,7 @@ class ApiValidator(
             if (requestBodySpec.required == true && requestBody.isNullOrBlank()) {
                 errors.add(
                     ValidationError(
-                        ValidationErrorType.MISSING_REQUIRED_BODY, "Request body is required but was not provided"
+                        ValidationErrorType.MISSING_REQUIRED_BODY
                     )
                 )
             } else if (requestBody != null && requestBody.isNotBlank()) {
@@ -203,7 +199,7 @@ class ApiValidator(
                 if (mediaTypeSpec == null) {
                     errors.add(
                         ValidationError(
-                            ValidationErrorType.INVALID_CONTENT_TYPE, "Unsupported content type: application/json"
+                            ValidationErrorType.INVALID_CONTENT_TYPE
                         )
                     )
                 } else {
@@ -211,10 +207,10 @@ class ApiValidator(
                     try {
                         val bodyJson = parseJsonBody(requestBody)
                         errors.addAll(validateBodySchema(bodyJson, mediaTypeSpec.schema))
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         errors.add(
                             ValidationError(
-                                ValidationErrorType.INVALID_BODY_STRUCTURE, "Invalid JSON format: ${e.message}"
+                                ValidationErrorType.INVALID_BODY_STRUCTURE
                             )
                         )
                     }
@@ -223,7 +219,7 @@ class ApiValidator(
         } else if (requestBody != null && requestBody.isNotBlank()) {
             errors.add(
                 ValidationError(
-                    ValidationErrorType.OTHER, "Request body provided but not expected for this endpoint"
+                    ValidationErrorType.OTHER
                 )
             )
         }
@@ -311,9 +307,7 @@ class ApiValidator(
                 if (!bodyJson.containsKey(requiredProp)) {
                     errors.add(
                         ValidationError(
-                            ValidationErrorType.MISSING_REQUIRED_BODY_FIELD,
-                            "Missing required field in request body: $requiredProp",
-                            requiredProp
+                            ValidationErrorType.MISSING_REQUIRED_BODY_FIELD, requiredProp
                         )
                     )
                 }
@@ -326,9 +320,7 @@ class ApiValidator(
                 if (!validatePropertyType(propValue, propSchema)) {
                     errors.add(
                         ValidationError(
-                            ValidationErrorType.INVALID_BODY_FIELD_TYPE,
-                            "Field $propName has invalid type or format",
-                            propName
+                            ValidationErrorType.INVALID_BODY_FIELD_TYPE, propName
                         )
                     )
                 }

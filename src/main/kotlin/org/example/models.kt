@@ -38,12 +38,10 @@ data class ValidationResult(
  * Represents a validation error.
  *
  * @property type The type of validation error
- * @property message A human-readable error message
  * @property field The field that caused the error, if applicable
  */
 data class ValidationError(
     val type: ValidationErrorType,
-    val message: String,
     val field: String? = null
 )
 
