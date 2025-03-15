@@ -9,16 +9,16 @@ import io.ktor.http.Url
 /**
  * Class responsible for API validation against OpenAPI specifications.
  */
-class ApiValidator {
+class ApiValidator(
+    specsDirectory: String = "api_specs"
+) {
 
     /**
      * List of OpenAPI specification files to validate against.
      */
-    private val openApiFiles: List<String> = File("api_specs").listFiles()
-        ?.filter { it.isFile && it.extension.equals("json", ignoreCase = true) }
-        ?.map { it.path }
-        ?.sorted()
-        ?: emptyList()
+    private val openApiFiles: List<String> =
+        File(specsDirectory).listFiles()?.filter { it.isFile && it.extension.equals("json", ignoreCase = true) }
+            ?.map { it.path }?.sorted() ?: emptyList()
 
     /**
      * Parses an OpenAPI specification file.
@@ -108,10 +108,7 @@ class ApiValidator {
 
                     if (operation != null) {
                         return EndpointMatch(
-                            url = url,
-                            method = httpMethod.uppercase(),
-                            pathPattern = pathPattern,
-                            operation = operation
+                            url = url, method = httpMethod.uppercase(), pathPattern = pathPattern, operation = operation
                         )
                     }
                 }
@@ -130,16 +127,13 @@ class ApiValidator {
      * @return True if the paths match, false otherwise
      */
     private fun pathsMatch(actualPath: String, templatePath: String): Boolean {
-        val regexPattern = templatePath
-            .replace(".", "\\.")
-            .split("/")
-            .joinToString("/") { segment ->
-                if (segment.startsWith("{") && segment.endsWith("}")) {
-                    "([^/]+)"
-                } else {
-                    segment
-                }
+        val regexPattern = templatePath.replace(".", "\\.").split("/").joinToString("/") { segment ->
+            if (segment.startsWith("{") && segment.endsWith("}")) {
+                "([^/]+)"
+            } else {
+                segment
             }
+        }
 
         val regex = "^$regexPattern$".toRegex()
         return regex.matches(actualPath)
@@ -154,9 +148,7 @@ class ApiValidator {
      * @return A ValidationResult indicating if the request is valid and any validation errors
      */
     fun validateRequest(
-        endpointMatch: EndpointMatch,
-        params: Map<String, String>,
-        requestBody: String?
+        endpointMatch: EndpointMatch, params: Map<String, String>, requestBody: String?
     ): ValidationResult {
         val errors = mutableListOf<ValidationError>()
 
@@ -165,18 +157,17 @@ class ApiValidator {
         val queryParameters = expectedParameters.filter { it.`in` == "query" }
 
         // Check for missing required parameters
-        queryParameters.filter { it.required == true }
-            .forEach { param ->
-                if (!params.containsKey(param.name)) {
-                    errors.add(
-                        ValidationError(
-                            ValidationErrorType.MISSING_REQUIRED_PARAMETER,
-                            "Missing required query parameter: ${param.name}",
-                            param.name
-                        )
+        queryParameters.filter { it.required == true }.forEach { param ->
+            if (!params.containsKey(param.name)) {
+                errors.add(
+                    ValidationError(
+                        ValidationErrorType.MISSING_REQUIRED_PARAMETER,
+                        "Missing required query parameter: ${param.name}",
+                        param.name
                     )
-                }
+                )
             }
+        }
 
         // Check parameter types
         params.forEach { (paramName, paramValue) ->
@@ -202,8 +193,7 @@ class ApiValidator {
             if (requestBodySpec.required == true && requestBody.isNullOrBlank()) {
                 errors.add(
                     ValidationError(
-                        ValidationErrorType.MISSING_REQUIRED_BODY,
-                        "Request body is required but was not provided"
+                        ValidationErrorType.MISSING_REQUIRED_BODY, "Request body is required but was not provided"
                     )
                 )
             } else if (requestBody != null && requestBody.isNotBlank()) {
@@ -213,8 +203,7 @@ class ApiValidator {
                 if (mediaTypeSpec == null) {
                     errors.add(
                         ValidationError(
-                            ValidationErrorType.INVALID_CONTENT_TYPE,
-                            "Unsupported content type: application/json"
+                            ValidationErrorType.INVALID_CONTENT_TYPE, "Unsupported content type: application/json"
                         )
                     )
                 } else {
@@ -225,8 +214,7 @@ class ApiValidator {
                     } catch (e: Exception) {
                         errors.add(
                             ValidationError(
-                                ValidationErrorType.INVALID_BODY_STRUCTURE,
-                                "Invalid JSON format: ${e.message}"
+                                ValidationErrorType.INVALID_BODY_STRUCTURE, "Invalid JSON format: ${e.message}"
                             )
                         )
                     }
@@ -235,8 +223,7 @@ class ApiValidator {
         } else if (requestBody != null && requestBody.isNotBlank()) {
             errors.add(
                 ValidationError(
-                    ValidationErrorType.OTHER,
-                    "Request body provided but not expected for this endpoint"
+                    ValidationErrorType.OTHER, "Request body provided but not expected for this endpoint"
                 )
             )
         }
@@ -311,8 +298,7 @@ class ApiValidator {
      * @return A list of validation errors
      */
     private fun validateBodySchema(
-        bodyJson: Map<String, Any?>,
-        schema: io.swagger.v3.oas.models.media.Schema<*>?
+        bodyJson: Map<String, Any?>, schema: io.swagger.v3.oas.models.media.Schema<*>?
     ): List<ValidationError> {
         val errors = mutableListOf<ValidationError>()
 

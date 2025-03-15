@@ -3,13 +3,10 @@ package org.example
 /**
  * Class for parsing user input into a structured ParsedRequest
  */
-object RequestParser {
+class RequestParser {
     // Regular expression to match the expected request format
     private val REQUEST_PATTERN = Regex(
-        "Determine the status of (\\S+) using (GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)" +
-                "(?:\\s+with\\s+query\\s+parameters\\s+(.+?))?" +
-                "(?:\\s+with\\s+headers\\s+(.+?))?" +
-                "(?:\\s+and\\s+body\\s+(.+))?",
+        "Determine the status of (\\S+) using (GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD)" + "(?:\\s+with\\s+query\\s+parameters\\s+(.+?))?" + "(?:\\s+with\\s+headers\\s+(.+?))?" + "(?:\\s+and\\s+body\\s+(.+))?",
         RegexOption.IGNORE_CASE
     )
 
@@ -38,11 +35,7 @@ object RequestParser {
         val body = if (bodyString.isNotBlank()) bodyString.trim() else null
 
         return ParsedRequest(
-            url = url,
-            method = method,
-            queryParams = queryParams,
-            headers = headers,
-            body = body
+            url = url, method = method, queryParams = queryParams, headers = headers, body = body
         )
     }
 
@@ -55,9 +48,7 @@ object RequestParser {
     private fun parseKeyValuePairs(input: String): Map<String, String> {
         if (input.isBlank()) return emptyMap()
 
-        return input.split(",\\s*".toRegex())
-            .map { it.trim() }
-            .mapNotNull { pair ->
+        return input.split(",\\s*".toRegex()).map { it.trim() }.mapNotNull { pair ->
                 val parts = pair.split("=", limit = 2)
                 if (parts.size == 2) {
                     parts[0].trim() to parts[1].trim()

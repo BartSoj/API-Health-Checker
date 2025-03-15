@@ -5,7 +5,15 @@ package org.example
  * Creates and starts the CLI agent.
  */
 fun main() {
-    val apiHealthChecker = ApiHealthChecker()
+    val requestParser = RequestParser()
+    val apiValidator = ApiValidator()
+    val httpRequestTester = HttpRequestTester()
+    val syntheticTool = SyntheticTool()
+
+    val apiHealthChecker = ApiHealthChecker(
+        apiValidator, httpRequestTester, syntheticTool, requestParser
+    )
+
     val cliAgent = CliAgent(apiHealthChecker)
     cliAgent.start()
 }

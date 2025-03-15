@@ -4,10 +4,12 @@ package org.example
  * Main orchestration class for the API Health Checker application.
  * Coordinates parsing, validation, and execution of API health checks.
  */
-class ApiHealthChecker {
-    private val apiValidator = ApiValidator()
-    private val httpRequestTester = HttpRequestTester()
-    private val syntheticTool = SyntheticTool()
+class ApiHealthChecker(
+    private val apiValidator: ApiValidator,
+    private val httpRequestTester: HttpRequestTester,
+    private val syntheticTool: SyntheticTool,
+    private val requestParser: RequestParser
+) {
 
     /**
      * Process a user request to check the health of an API endpoint
@@ -16,8 +18,7 @@ class ApiHealthChecker {
      * @return A response message to display to the user
      */
     fun processRequest(request: String): String {
-        // Parse the input request
-        val parsedRequest = RequestParser.parse(request)
+        val parsedRequest = requestParser.parse(request)
 
         if (parsedRequest == null) {
             return "Invalid request format. Expected: \"Determine the status of <URL> using <METHOD> [with query parameters <params>] [with headers <headers>] [and body <body>]\"."

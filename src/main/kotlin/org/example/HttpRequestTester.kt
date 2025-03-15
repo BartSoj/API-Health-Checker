@@ -15,22 +15,32 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * Class responsible for testing HTTP requests
  */
-class HttpRequestTester {
-    private val client = HttpClient(CIO) {
-        install(ContentNegotiation) {
-            json(Json {
-                prettyPrint = true
-                isLenient = true
-                ignoreUnknownKeys = true
-            })
-        }
-        install(HttpTimeout) {
-            requestTimeoutMillis = 5_000
-            connectTimeoutMillis = 3_000
-        }
-        install(HttpRequestRetry) {
-            retryOnServerErrors(maxRetries = 3)
-            exponentialDelay()
+class HttpRequestTester(
+    private val client: HttpClient = createDefaultHttpClient()
+) {
+
+    companion object {
+        /**
+         * Creates a default HTTP client configuration
+         */
+        fun createDefaultHttpClient(): HttpClient {
+            return HttpClient(CIO) {
+                install(ContentNegotiation) {
+                    json(Json {
+                        prettyPrint = true
+                        isLenient = true
+                        ignoreUnknownKeys = true
+                    })
+                }
+                install(HttpTimeout) {
+                    requestTimeoutMillis = 5_000
+                    connectTimeoutMillis = 3_000
+                }
+                install(HttpRequestRetry) {
+                    retryOnServerErrors(maxRetries = 3)
+                    exponentialDelay()
+                }
+            }
         }
     }
 

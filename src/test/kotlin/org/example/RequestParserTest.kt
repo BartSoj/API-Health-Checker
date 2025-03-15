@@ -4,18 +4,19 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class RequestParserTest {
+    private val parser = RequestParser()
 
     @Test
     fun `parse should return null for invalid input`() {
         val input = "This is not a valid request format"
-        val result = RequestParser.parse(input)
+        val result = parser.parse(input)
         assertNull(result)
     }
 
     @Test
     fun `parse should parse basic request with only URL and method`() {
         val input = "Determine the status of https://api.example.com/endpoint using GET"
-        val result = RequestParser.parse(input)
+        val result = parser.parse(input)
 
         assertNotNull(result)
         assertEquals("https://api.example.com/endpoint", result?.url)
@@ -31,7 +32,7 @@ class RequestParserTest {
 
         methods.forEach { method ->
             val input = "Determine the status of https://api.example.com/endpoint using $method"
-            val result = RequestParser.parse(input)
+            val result = parser.parse(input)
 
             assertNotNull(result)
             assertEquals(method, result?.method)
@@ -42,7 +43,7 @@ class RequestParserTest {
     fun `parse should handle query parameters`() {
         val input =
             "Determine the status of https://api.example.com/search using GET with query parameters q=test, limit=10"
-        val result = RequestParser.parse(input)
+        val result = parser.parse(input)
 
         assertNotNull(result)
         assertEquals("https://api.example.com/search", result?.url)
@@ -56,7 +57,7 @@ class RequestParserTest {
     fun `parse should handle headers`() {
         val input =
             "Determine the status of https://api.example.com/endpoint using GET with headers Authorization=Bearer token, Content-Type=application/json"
-        val result = RequestParser.parse(input)
+        val result = parser.parse(input)
 
         assertNotNull(result)
         assertEquals("https://api.example.com/endpoint", result?.url)
@@ -75,7 +76,7 @@ class RequestParserTest {
         val input = """
             Determine the status of https://api.example.com/users using POST and body {"name":"John","email":"john@example.com"}
         """.trimIndent()
-        val result = RequestParser.parse(input)
+        val result = parser.parse(input)
 
         assertNotNull(result)
         assertEquals("https://api.example.com/users", result?.url)
@@ -93,7 +94,7 @@ class RequestParserTest {
             with headers Authorization=Bearer token, Content-Type=application/json 
             and body {"name":"John","email":"john@example.com"}
         """.trimIndent()
-        val result = RequestParser.parse(input)
+        val result = parser.parse(input)
 
         assertNotNull(result)
         assertEquals("https://api.example.com/users", result?.url)
@@ -111,7 +112,7 @@ class RequestParserTest {
     fun `parse should handle key-value pairs with colon separator`() {
         val input =
             "Determine the status of https://api.example.com/endpoint using GET with headers Content-Type: application/json, Accept: application/json"
-        val result = RequestParser.parse(input)
+        val result = parser.parse(input)
 
         assertNotNull(result)
         assertEquals(
@@ -124,7 +125,7 @@ class RequestParserTest {
     @Test
     fun `parse should be case insensitive for keywords`() {
         val input = "determine THE status OF https://api.example.com/endpoint USING get WITH query PARAMETERS id=123"
-        val result = RequestParser.parse(input)
+        val result = parser.parse(input)
 
         assertNotNull(result)
         assertEquals("https://api.example.com/endpoint", result?.url)
