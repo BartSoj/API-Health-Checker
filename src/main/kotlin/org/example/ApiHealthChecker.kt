@@ -8,7 +8,8 @@ class ApiHealthChecker(
     private val apiValidator: ApiValidator,
     private val httpRequestTester: HttpRequestTester,
     private val syntheticTool: SyntheticTool,
-    private val requestParser: RequestParser
+    private val requestParser: RequestParser,
+    private val healthCheckMode: HealthCheckMode = HealthCheckMode.HTTP_CLIENT
 ) {
 
     /**
@@ -40,24 +41,28 @@ class ApiHealthChecker(
             return formatValidationError(validationResult, endpoint)
         }
 
-        // Decide which tool to use for checking health
-        return if (shouldUseSyntheticTool()) {
-            // Use synthetic tool
-            val status = syntheticTool.checkHealth(parsedRequest)
-            formatResponse(parsedRequest.url, status)
-        } else {
-            // Use real HTTP client
-            try {
-                val status = httpRequestTester.checkHealth(
-                    url = parsedRequest.url,
-                    method = parsedRequest.method,
-                    params = parsedRequest.queryParams,
-                    body = parsedRequest.body,
-                    headers = parsedRequest.headers
-                )
+        // Use the tool specified by the healthCheckMode
+        return when (healthCheckMode) {
+            HealthCheckMode.SYNTHETIC_TOOL -> {
+                // Use synthetic tool
+                val status = syntheticTool.checkHealth(parsedRequest)
                 formatResponse(parsedRequest.url, status)
-            } catch (e: Exception) {
-                "Error: Unable to reach ${parsedRequest.url}: ${e.message ?: "Unknown error occurred"}"
+            }
+
+            HealthCheckMode.HTTP_CLIENT -> {
+                // Use real HTTP client
+                try {
+                    val status = httpRequestTester.checkHealth(
+                        url = parsedRequest.url,
+                        method = parsedRequest.method,
+                        params = parsedRequest.queryParams,
+                        body = parsedRequest.body,
+                        headers = parsedRequest.headers
+                    )
+                    formatResponse(parsedRequest.url, status)
+                } catch (e: Exception) {
+                    "Error: Unable to reach ${parsedRequest.url}: ${e.message ?: "Unknown error occurred"}"
+                }
             }
         }
     }
@@ -161,15 +166,6 @@ class ApiHealthChecker(
         return sb.toString()
     }
 
-    /**
-     * Decides whether to use the synthetic tool instead of real HTTP requests
-     * This can be based on various conditions like specific domains, testing mode, etc.
-     *
-     * @return True if the synthetic tool should be used, false otherwise
-     */
-    private fun shouldUseSyntheticTool(): Boolean {
-        return false  // Temporary, think of better way how to determine when to use synthetic tool
-    }
 
     /**
      * Cleanup resources when the health checker is no longer needed

@@ -1,6 +1,14 @@
 package org.example
 
 /**
+ * Determines which tool to use for API health checking
+ */
+enum class HealthCheckMode {
+    HTTP_CLIENT,
+    SYNTHETIC_TOOL
+}
+
+/**
  * Represents a matched endpoint in an OpenAPI specification.
  *
  * @property url The URL that matched the endpoint
