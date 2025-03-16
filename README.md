@@ -1,184 +1,191 @@
-1. Technology & Environment
+# API Health Checker CLI Agent
 
-    - Language: Kotlin.
-    - Interface: Command-line (CLI) application.
-    - Runtime: Continuous loop accepting input until the user types a termination command (e.g., “exit”).
+A CLI agent for validating and testing API endpoints against OpenAPI specifications, written in Kotlin.
 
-2. Input Format
+## 🔍 Overview
 
-    - Accepted Request Pattern:
-      `Determine the status of <URL> with query parameters <query> with headers <headers> and body <body>`
+API Health Checker is a simulated AI agent that operates via command line to validate and test API endpoints. The agent:
 
-    - Mandatory:
-    - URL: A valid HTTP/HTTPS URL.
-    - Optional:
-    - Query Parameters: Key-value pairs appended to the URL (e.g., ?key1=value1&key2=value2).
-    - Headers: Provided as one or more key: value pairs.
-    - Body: A JSON-formatted string (if applicable).
+1. Accepts specific text-based requests about API endpoint health
+2. Validates requests against OpenAPI specifications
+3. Selects appropriate tools (HTTP client or synthetic responder) to check endpoint health
+4. Returns detailed health status in a conversational format
 
-    - Validation:
-    - The agent must check that the input strictly matches this format.
-    - If not, it must respond with an error message indicating the correct format.
+This agent is designed to process one specific type of request format and cannot handle general queries outside its
+domain.
 
-3. OpenAPI Specification Validation
+## ✨ Features
 
-    - Specification File:
-    - The agent must load a predefined OpenAPI JSON file at startup.
-    - Validation Process:
-    - URL Path: The provided URL’s path must exist in the OpenAPI spec.
-    - HTTP Method: The request must use an allowed method (e.g., HEAD, GET, or POST) as defined in the spec.
-    - Parameters & Headers:
-    - All required query parameters and headers defined for the endpoint must be present.
-    - The values must conform to the expected format or type.
-    - Request Body:
-    - If a body is provided, it must match the schema defined in the OpenAPI spec.
-    - Invalid Request Handling:
-    - If the input does not match the specification, output:
+- **Specific Request Format**: Only processes "Determine the status of `<URL>` using `<METHOD>`" format requests
+- **OpenAPI Validation**: Validates requests against standard OpenAPI specifications
+- **Live Health Checking**: Tests API endpoint availability and response times
+- **Synthetic Testing**: Option to use synthetic tools instead of real HTTP requests
+- **Interactive CLI**: User-friendly command-line interface with animated agent responses
+- **Detailed Error Reporting**: Comprehensive validation messages for debugging
+- **Multiple API Support**: Pre-loaded specifications for many popular APIs
 
-   Invalid request: The endpoint or request parameters do not match our OpenAPI specification.
+## 📋 Requirements
 
-4. HTTP Request Execution
+- Java 11 or higher
+- Kotlin 1.8+
+- Gradle 7.0+
 
-    - Tool Options (Internal Tools):
-      The agent may have multiple internal tools for handling valid requests:
-    - Real HTTP Request Tool:
-    - Construct the HTTP request using the parsed URL, query parameters, headers, and body.
-    - Set appropriate timeouts (e.g., connection and read timeouts of 5000ms).
-    - Use an HTTP client (e.g., HttpURLConnection in Java) to send the request.
-    - Capture the HTTP response status code.
-    - Synthetic Response Tool (Optional):
-    - Generate a synthetic status code or response for demonstration purposes.
-    - Tool selection can be random or based on specific conditions.
-    - Decision Logic:
-    - The agent must decide which tool to use while keeping the input request type fixed.
+## 🚀 Getting Started
 
-5. Output Format
+### Running from JAR
 
-    - Success Response:
-      If the request is valid and executed:
+Download the latest JAR from GitHub releases
+https://github.com/BartSoj/API-Health-Checker/releases \
+Run the agent:
 
-   The HTTP status of <URL> is <status code>.
-
-    - Error Response:
-    - For validation errors (not matching OpenAPI spec):
-
-   Invalid request: The endpoint or request parameters do not match our OpenAPI specification.
-
-    - For network or execution errors:
-
-   Error: Unable to reach the specified URL.
-
-6. User Interaction & Error Handling
-
-    - Continuous Input:
-    - The agent should repeatedly prompt the user for input.
-    - Graceful Error Handling:
-    - Provide clear error messages if the input format is incorrect or if the request fails.
-    - Termination:
-    - Allow the user to exit the application with a specific command (e.g., “exit”).
-
-7. Code Quality & Structure
-
-    - Modularity:
-    - Separate components for input processing, OpenAPI specification validation, HTTP request execution, and output
-      generation.
-    - Documentation:
-    - Include clear inline comments and documentation for each module.
-
-# Example Agent queries
-
-### Correctly Structured Requests
-
-```
-Determine the status of https://api.spotify.com/v1/tracks/3n3Ppam7vgaVa1iaRUc9Lp with query parameters market=US
+```bash
+java -jar api-health-checker.jar
 ```
 
-```
-Determine the status of https://api.spotify.com/v1/playlists/3cEYpjA9oz9GiPac4AsH4n with headers Authorization=Bearer abc123
-```
+### Usage Examples
+
+The agent only processes requests in the following specific format:
 
 ```
-Determine the status of https://api.spotify.com/v1/recommendations with query parameters seed_artists=4NHQUGzhtTLFvgF5SZesLK,seed_genres=pop,seed_tracks=0c6xIDDpzE81m2q797ordA
+Determine the status of <URL> using <METHOD> [with query parameters <params>] [with headers <headers>] [and body <body>]
 ```
 
-```
-Determine the status of https://tasks.googleapis.com/tasks/v1/users/@me/lists
-```
+#### Basic GET Request (Successful)
 
 ```
-Determine the status of https://tasks.googleapis.com/tasks/v1/users/@me/lists/taskList123
+🔍 > Determine the status of https://httpbin.org/get using GET
+
+🤖 > The API at https://httpbin.org/get is responding correctly with a 200 status code. The response time was 348ms, which is good.
 ```
 
-```
-Determine the status of https://tasks.googleapis.com/tasks/v1/users/@me/lists with headers Authorization=Bearer abc123 and body { \"title\": \"New Task List\" }
-```
+#### GET Request with Parameters
 
 ```
-Determine the status of https://tasks.googleapis.com/tasks/v1/lists/taskList123/tasks with query parameters showCompleted=true, maxResults=10
+🔍 > Determine the status of https://httpbin.org/get using GET with query parameters foo=bar, test=123
+
+🤖 > The API at https://httpbin.org/get is responding correctly with a 200 status code. The response time was 412ms, which is good.
 ```
 
-```
-Determine the status of https://tasks.googleapis.com/tasks/v1/lists/taskList123/tasks with headers Authorization=Bearer abc123 and body { \"title\": \"New Task\", \"notes\": \"Complete this by Monday.\" }
-```
+#### Status Code Error Example
 
 ```
-Determine the status of https://httpbin.org/status/418
+🔍 > Determine the status of https://httpbin.org/status/404 using GET
+
+🤖 > I was able to reach https://httpbin.org/status/404, but the API is experiencing issues. It returned a 404 status code in 356ms. The specific error is: Unhealthy status code: 404.
 ```
 
-```
-Determine the status of https://httpbin.org/status/200
-```
+#### Invalid Request Format
 
 ```
-Determine the status of https://httpbin.org/status/500
+🔍 > Check if https://httpbin.org/get is working
+
+🤖 > Invalid request format. Expected: "Determine the status of <URL> using <METHOD> [with query parameters <params>] [with headers <headers>] [and body <body>]".
 ```
 
-```
-Determine the status of https://httpbin.org/delay/10
-```
+#### Invalid Endpoint
 
 ```
-Determine the status of https://httpbin.org/status/404
+🔍 > Determine the status of https://httpbin.org/invalid-endpoint using GET
+
+🤖 > I couldn't find an API endpoint for GET /invalid-endpoint on httpbin.org. Please check that the URL is correct and the API is supported by our OpenAPI specifications.
 ```
 
-### Incorrectly Structured Requests
+#### POST Request with unexpected Body
 
 ```
-Determine the status of with query parameters market=US
+🔍 > Determine the status of https://httpbin.org/post using POST and body {"name": "John Doe", "email": "john@example.com"}
+
+🤖 > I noticed some issues with your request to /post using POST: There's an issue with your request body - it wasn't expected for this endpoint. 
 ```
 
-```
-Determine the status of https://api.spotify.com/v1/me/player/play
-```
+#### PUT Request with Headers and unexpected Body
 
 ```
-Determine the status of https://api.spotify.com/v1/tracks with body instead of query parameters
+🔍 > Determine the status of https://httpbin.org/put using PUT with headers Content-Type=application/json, X-Custom-Header=test and body {"updated": true}
+
+🤖 > I noticed some issues with your request to /put using PUT: There's an issue with your request body - it wasn't expected for this endpoint.
 ```
 
-```
-Determine the status of https://api.spotify.com/v1/me with query parameters market=US
-```
+### Spotify API Validation Examples
+
+The following examples demonstrate validation against the Spotify API OpenAPI specification:
+
+#### Missing Required Query Parameter
 
 ```
-Determine the status of with query parameters maxResults=10
+🔍 > Determine the status of https://api.spotify.com/v1/search using GET
+
+🤖 > I noticed some issues with your request to /v1/search using GET: You need to provide the following required parameters: q, type.
 ```
 
-```
-Determine the status of https://tasks.googleapis.com/tasks/v1/lists/taskList123/tasks/task123 with body { \"status\": \"completed\" }
-```
+#### Search with Missing Type Parameter
 
 ```
-Determine the status of https://tasks.googleapis.com/tasks/v1/lists/taskList123/tasks?showCompleted-true
+🔍 > Determine the status of https://api.spotify.com/v1/search using GET with query parameters q=queen
+
+🤖 > I noticed some issues with your request to /v1/search using GET: You need to provide the following required parameter: type.
 ```
 
-```
-Determine the status of https://tasks.googleapis.com/tasks/v1/lists//tasks/task123
-```
+#### Missing Authorization Header
 
 ```
-Determine the status of https://httpbin.org/post
+🔍 > Determine the status of https://api.spotify.com/v1/me/playlists using GET
+
+🤖 > I was able to reach https://api.spotify.com/v1/me/playlists, but the API is experiencing issues. It returned a 401 status code in 534ms. The specific error is: Unhealthy status code: 401.
 ```
 
+#### Missing Required Body for POST Request
+
 ```
-Determine the status of https://httpbin.org/invalidendpoint
+🔍 > Determine the status of https://api.spotify.com/v1/users/USER_ID/playlists using POST
+
+🤖 > I noticed some issues with your request to /v1/users/{user_id}/playlists using POST: This endpoint requires a request body, but none was provided.
+```
+
+#### Invalid Body Structure
+
+```
+🔍 > Determine the status of https://api.spotify.com/v1/users/USER_ID/playlists using POST with body {"invalid": "structure"}
+
+🤖 > I noticed some issues with your request to /v1/users/{user_id}/playlists using POST: Your request body is missing required fields: name.
+```
+
+## 🔧 How It Works
+
+1. **Input Processing**: The agent parses the specific text input format to extract URL, method, and optional parameters
+2. **Tool Selection**: The agent selects either the HTTP Request Tool or Synthetic Response Tool for processing
+3. **Request Validation**: Validates the request against OpenAPI specifications for correctness
+4. **Request Execution**: The selected tool processes the request and gathers health data
+5. **Response Formatting**: Returns detailed health status information in a conversational format
+
+If the input doesn't match the expected format or validation fails, the agent provides specific error messages.
+
+## 📚 Supported API Specifications
+
+The agent includes OpenAPI specifications for:
+
+- Google APIs (Calendar, Drive, Gmail, People, Sheets, Slides, Tasks)
+- Discord API
+- Spotify API
+- Wolfram Alpha API
+- HTTP Bin (for testing)
+
+Custom OpenAPI specifications can be added to the `api_specs` directory.
+
+## 🧪 Development
+
+### Building and Testing
+
+```bash
+# Build the project
+./gradlew build
+
+# Run all tests
+./gradlew test
+
+# Run a specific test
+./gradlew test --tests "org.example.ApiValidatorTest.testMethodName"
+
+# Run the agent
+./gradlew run
 ```
